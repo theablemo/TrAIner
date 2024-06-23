@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'package:provider/provider.dart';
 import 'package:trainerproject/controllers/providers/camera_provider.dart';
+import 'package:trainerproject/controllers/providers/pose_provider.dart';
 
 class CameraView extends StatefulWidget {
   CameraView(
@@ -39,8 +40,6 @@ class _CameraViewState extends State<CameraView> {
   CameraController? _controller;
   // int _cameraIndex = -1;
 
-  bool _changingCameraLens = false;
-
   @override
   void initState() {
     // WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,6 +63,7 @@ class _CameraViewState extends State<CameraView> {
     // }
     // if (_cameraIndex != -1) {
     if (_camera != null) {
+      print("live kardam 0");
       _startLiveFeed();
     }
 
@@ -101,24 +101,57 @@ class _CameraViewState extends State<CameraView> {
     }
     if (_controller == null) return Container();
     if (_controller?.value.isInitialized == false) return Container();
-    return ColoredBox(
-      color: Colors.black,
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          Center(
-            child: _changingCameraLens
-                ? const Center(
-                    child: Text('Changing camera lens'),
-                  )
-                : CameraPreview(
-                    _controller!,
+    var camera = _controller!.value;
+    // fetch screen size
+    final size = MediaQuery.of(context).size;
+
+    // calculate scale depending on screen and camera ratios
+    // this is actually size.aspectRatio / (1 / camera.aspectRatio)
+    // because camera preview size is received as landscape
+    // but we're calculating for portrait orientation
+    var scale = size.aspectRatio * camera.aspectRatio;
+
+    // to prevent scaling down, invert the value
+    if (scale < 1) scale = 1 / scale;
+
+    return Center(
+      child: Stack(fit: StackFit.expand, children: [
+        RotatedBox(
+          quarterTurns: -1,
+          child: Transform.flip(
+            flipY: true,
+            child: AspectRatio(
+              aspectRatio: camera.aspectRatio,
+              child: CameraPreview(
+                _controller!,
+                child: Transform.flip(
+                  flipY: true,
+                  child: RotatedBox(
                     child: widget.customPaint,
+                    quarterTurns: 1,
                   ),
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ]),
     );
+
+    // return ColoredBox(
+    //   color: Colors.black,
+    //   child: Stack(
+    //     fit: StackFit.expand,
+    //     children: <Widget>[
+    //       Center(
+    //         child: CameraPreview(
+    //           _controller!,
+    //           child: widget.customPaint,
+    //         ),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 
   Future _startLiveFeed() async {
@@ -134,7 +167,7 @@ class _CameraViewState extends State<CameraView> {
     );
     context.read<CameraProvider>().setCameraController(_controller);
     _controller?.initialize().then((_) {
-      print("live kardam 3");
+      print("live kardam 1");
       if (!mounted) {
         return;
       }
@@ -153,7 +186,13 @@ class _CameraViewState extends State<CameraView> {
 
   Future _stopLiveFeed() async {
     await _controller?.stopImageStream();
-    // await _controller?.dispose();
+    if (mounted && !context.read<PoseProvider>().isCameraDisposed) {
+      context.read<PoseProvider>().setCameraDisposed(true);
+      await _controller?.dispose();
+    }
+    // if (!_controller!.value.isTakingPicture) {
+
+    // }
     _controller = null;
   }
 
@@ -166,7 +205,16 @@ class _CameraViewState extends State<CameraView> {
   //   setState(() => _changingCameraLens = false);
   // }
 
+  DeviceOrientation _getApplicableOrientation() {
+    return _controller!.value.isRecordingVideo
+        ? _controller!.value.recordingOrientation!
+        : (_controller!.value.previewPauseOrientation ??
+            _controller!.value.lockedCaptureOrientation ??
+            _controller!.value.deviceOrientation);
+  }
+
   void _processCameraImage(CameraImage image) {
+    print("live kardam 2 ${_getApplicableOrientation()}");
     final inputImage = _inputImageFromCameraImage(image);
     if (inputImage == null) return;
     // if (context.watch<CameraProvider>().isReadytoDetect) {

@@ -1,12 +1,12 @@
 import 'package:trainerproject/models/chat_message.dart';
 
 class ChatRep {
-  List<Message> messages;
+  List<ChatMessage> messages;
   String wrongRepImagePath;
   String correctedImagePath;
 
   ChatRep({
-    List<Message>? messages,
+    List<ChatMessage>? messages,
     this.wrongRepImagePath = "",
     this.correctedImagePath = "",
   }) : messages = messages ?? [];
@@ -19,8 +19,9 @@ class ChatRep {
 
   static ChatRep fromJson(Map<String, dynamic> json) {
     return ChatRep(
-      messages:
-          (json['messages'] as List).map((i) => Message.fromJson(i)).toList(),
+      messages: (json['messages'] as List)
+          .map((i) => ChatMessage.fromJson(i))
+          .toList(),
       wrongRepImagePath: json['wrongRepImagePath'],
       correctedImagePath: json['correctedImagePath'],
     );

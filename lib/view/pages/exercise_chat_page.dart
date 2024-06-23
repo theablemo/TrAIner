@@ -1,35 +1,178 @@
 import 'package:flutter/material.dart';
+import 'package:google_generative_ai/google_generative_ai.dart' as GenAI;
+// import 'package:flutter_gemma/flutter_gemma_interface.dart';
+import 'package:trainerproject/view/typing_indicator.dart';
 
-void main() {
-  runApp(MyApp());
+class ExerciseChatPage extends StatefulWidget {
+  @override
+  _ExerciseChatPageState createState() => _ExerciseChatPageState();
 }
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Squat Trainer Chat',
-      home: ChatPage(),
+class _ExerciseChatPageState extends State<ExerciseChatPage> {
+  List<Map<String, String>> messages = [];
+  final TextEditingController _controller = TextEditingController();
+  bool isGeneratingResponse = false;
+  String typingResponse = "";
+  late final GenAI.GenerativeModel model;
+  late final GenAI.ChatSession chat;
+  final FocusNode _textFieldFocus = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollDown() {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(
+          milliseconds: 750,
+        ),
+        curve: Curves.easeOutCirc,
+      ),
     );
   }
-}
 
-class ChatPage extends StatefulWidget {
   @override
-  _ChatPageState createState() => _ChatPageState();
-}
+  void initState() {
+    model = GenAI.GenerativeModel(
+      model: 'gemini-1.5-flash-latest',
+      apiKey: "AIzaSyB94iyYtAxvk5580sv0cPJqsfz8mZnKtmk",
+    );
 
-class _ChatPageState extends State<ChatPage> {
-  List<Map<String, String>> messages = [];
-  TextEditingController _controller = TextEditingController();
+    chat = model.startChat();
+    super.initState();
+  }
 
-  void _sendMessage(String text) {
+  Future<void> _sendChatMessage(String message) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _scrollDown();
     setState(() {
-      messages.add({'sender': 'user', 'text': text});
+      messages.add({'sender': 'user', 'text': message});
+      messages.add({'sender': 'user', 'text': ""});
       // Simulate a response from the LLM
-      messages
-          .add({'sender': 'llm', 'text': 'This is a response from the LLM.'});
+      isGeneratingResponse = true;
     });
+
+    try {
+      final response = await chat.sendMessage(
+        GenAI.Content.text(message),
+      );
+
+      final text = response.text;
+
+      if (text == null || text.isEmpty) {
+        _showError('No response from API.');
+        setState(() {
+          messages.removeLast();
+        });
+      } else {
+        setState(() {
+          isGeneratingResponse = false;
+          messages.removeLast();
+          messages.add({'sender': 'llm', 'text': text.trim()});
+        });
+      }
+    } catch (e) {
+      _showError(e.toString());
+      setState(() {
+        messages.removeLast();
+        isGeneratingResponse = false;
+      });
+    } finally {
+      _controller.clear();
+      typingResponse = "";
+      setState(() {
+        isGeneratingResponse = false;
+      });
+      _scrollDown();
+    }
+  }
+
+  void _showError(String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Something went wrong'),
+          content: SingleChildScrollView(
+            child: SelectableText(message),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void _sendMessage(String text) async {
+    setState(
+      () {
+        messages.add({'sender': 'user', 'text': text});
+        // Simulate a response from the LLM
+        isGeneratingResponse = true;
+      },
+    );
+
+    // final response = await model.generateContent();
+
+//     final String modelPath = "/data/local/tmp/llm/model.bin";
+//     final cacheDirFuture = getApplicationCacheDirectory();
+//     final cacheDir = (await cacheDirFuture).absolute.path;
+
+//     bool isGpu = true;
+//     final options = switch (isGpu) {
+//       true => LlmInferenceOptions.gpu(
+//           modelPath: modelPath,
+//           maxTokens: 2048,
+//           sequenceBatchSize: 20,
+//           temperature: 0.5,
+//           topK: 40,
+//         ),
+//       false => LlmInferenceOptions.cpu(
+//           modelPath: modelPath,
+//           maxTokens: 2048,
+//           temperature: 0.5,
+//           topK: 40,
+//           cacheDir: cacheDir,
+//         ),
+//     };
+
+// // Create an inference engine
+//     final engine = LlmInferenceEngine(options);
+//     final responseStream = engine.generateResponse(text).listen((String token) {
+//       if (token == null) {
+//         setState(() {
+//           isGeneratingResponse = false;
+//           messages.add({'sender': 'llm', 'text': typingResponse});
+//           typingResponse = "";
+//         });
+//       } else {
+//         setState(() {
+//           typingResponse = '$typingResponse$token';
+//         });
+//       }
+//     });
+
+    // final flutterGemma = FlutterGemmaPlugin.instance;
+    // final a =
+    //     flutterGemma.getResponseAsync(prompt: text).listen((String? token) {
+    //   if (token == null) {
+    //     setState(() {
+    //       isGeneratingResponse = false;
+    //       messages.add({'sender': 'llm', 'text': typingResponse});
+    //       typingResponse = "";
+    //     });
+    //   } else {
+    //     setState(() {
+    //       typingResponse = '$typingResponse$token';
+    //     });
+    //   }
+    // });
+    // a.cancel();
     _controller.clear();
   }
 
@@ -37,72 +180,47 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Chat with Trainer')),
-      body: NestedScrollView(
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          return <Widget>[
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverPersistentHeader(
-                delegate: MySliverPersistentHeaderDelegate(
-                  title: 'Rep #1 - Error: Knee valgus',
-                  isRep: true,
+      body: Column(
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverPersistentHeader(
+                  delegate: MySliverPersistentHeaderDelegate(
+                    title: 'General Chat',
+                    isRep: false,
+                  ),
+                  pinned: true,
                 ),
-                pinned: true,
-              ),
-            ),
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverPersistentHeader(
-                delegate: MySliverPersistentHeaderDelegate(
-                  title: 'General Chat',
-                  isRep: false,
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      var message = messages[index];
+                      return message['text']!.isEmpty
+                          ? ChatMessageBubble(
+                              sender: 'llm',
+                              text: typingResponse,
+                              isGeneratingResponse: true,
+                            )
+                          : ChatMessageBubble(
+                              sender: message['sender']!,
+                              text: message['text']!,
+                              isGeneratingResponse: false,
+                            );
+                    },
+                    childCount: messages.length,
+                  ),
                 ),
-                pinned: true,
-              ),
+              ],
             ),
-          ];
-        },
-        body: Column(
-          children: [
-            Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  SliverOverlapInjector(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
-                        context),
-                  ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        var message = messages[index];
-                        return ChatMessageBubble(
-                          sender: message['sender']!,
-                          text: message['text']!,
-                        );
-                      },
-                      childCount: messages.length,
-                    ),
-                  ),
-                  SliverOverlapInjector(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
-                        context),
-                  ),
-                  SliverList(
-                    delegate: SliverChildListDelegate([
-                      GeneralChatSection(
-                        message: 'What are the benefits of squats?',
-                      ),
-                    ]),
-                  ),
-                ],
-              ),
-            ),
-            ChatInputField(
-              controller: _controller,
-              onSend: _sendMessage,
-            ),
-          ],
-        ),
+          ),
+          ChatInputField(
+            controller: _controller,
+            onSend: _sendChatMessage,
+            focusNode: _textFieldFocus,
+          ),
+        ],
       ),
     );
   }
@@ -140,8 +258,12 @@ class MySliverPersistentHeaderDelegate extends SliverPersistentHeaderDelegate {
 class ChatMessageBubble extends StatelessWidget {
   final String sender;
   final String text;
+  final bool isGeneratingResponse;
 
-  ChatMessageBubble({required this.sender, required this.text});
+  ChatMessageBubble(
+      {required this.sender,
+      required this.text,
+      required this.isGeneratingResponse});
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +276,7 @@ class ChatMessageBubble extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: CircleAvatar(
-              child: Icon(Icons.android),
+              child: Icon(Icons.auto_awesome),
             ),
           ),
         Container(
@@ -165,7 +287,11 @@ class ChatMessageBubble extends StatelessWidget {
             color: isUser ? Colors.blue[100] : Colors.green[100],
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(text),
+          child: isGeneratingResponse
+              ? const TypingIndicator(
+                  showIndicator: true,
+                )
+              : Text(text),
         ),
         if (isUser)
           Padding(
@@ -196,8 +322,12 @@ class GeneralChatSection extends StatelessWidget {
 class ChatInputField extends StatelessWidget {
   final TextEditingController controller;
   final Function(String) onSend;
+  final FocusNode focusNode;
 
-  ChatInputField({required this.controller, required this.onSend});
+  ChatInputField(
+      {required this.controller,
+      required this.onSend,
+      required this.focusNode});
 
   @override
   Widget build(BuildContext context) {
@@ -207,8 +337,11 @@ class ChatInputField extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
+              focusNode: focusNode,
               controller: controller,
-              decoration: InputDecoration(hintText: 'Type your message...'),
+              textInputAction: TextInputAction.send,
+              decoration:
+                  const InputDecoration(hintText: 'Type your message...'),
               onSubmitted: (text) {
                 if (text.isNotEmpty) {
                   onSend(text);

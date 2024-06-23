@@ -21,6 +21,12 @@ class PoseProvider extends ChangeNotifier {
   bool? isFootOutwards;
   Set<RepError> repErrors = {};
   bool isReadytoDetect = false;
+  bool isCameraDisposed = false;
+
+  void setCameraDisposed(bool value) {
+    isCameraDisposed = value;
+    notifyListeners();
+  }
 
   void setReadytoDetect(bool value) {
     isReadytoDetect = value;
@@ -192,6 +198,7 @@ class PoseProvider extends ChangeNotifier {
     isFootWideEnough = null;
     isFootOutwards = null;
     isReadytoDetect = false;
+    isCameraDisposed = false;
     repErrors.clear();
   }
 

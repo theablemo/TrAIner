@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+// import 'package:flutter_gemini/flutter_gemini.dart';
+// import 'package:flutter_gemma/flutter_gemma_interface.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainerproject/constants.dart';
@@ -9,7 +12,29 @@ import 'package:trainerproject/controllers/providers/user_info_provider.dart';
 import 'package:trainerproject/view/pages/user_info_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  // Gemini.init(apiKey: 'AIzaSyB94iyYtAxvk5580sv0cPJqsfz8mZnKtmk');
+  WidgetsFlutterBinding.ensureInitialized();
+  // FlutterGemmaPlugin.instance
+  //     .init(
+  //   /// maxTokens is optional, by default the value is 1024
+  //   temperature: 1.0,
+
+  //   /// temperature is optional, by default the value is 1.0
+  //   topK: 1,
+
+  //   /// topK is optional, by default the value is 1
+  //   randomSeed: 1,
+
+  //   /// randomSeed is optional, by default the value is 1
+  // )
+  //     .then((_) {
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) {
+    runApp(const MyApp());
+  });
+  // });
 }
 
 class MyApp extends StatelessWidget {

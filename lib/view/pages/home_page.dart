@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:flutter_gemma/flutter_gemma_interface.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainerproject/constants.dart';
@@ -150,6 +151,13 @@ class HomePage extends StatelessWidget {
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          // final directory = Directory("");
+          // final ex = await directory.list();
+          // print("manam: ${}");
+          // final flutterGemma = FlutterGemmaPlugin.instance;
+          // flutterGemma
+          //     .getResponseAsync(prompt: 'Tell me something interesting')
+          //     .listen((String? token) => print("Hello mammad: ${token}"));
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => ExerciseSelectionPage()),

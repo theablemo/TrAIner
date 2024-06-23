@@ -473,7 +473,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
               .read<CameraProvider>()
               .cameraController!
               .takePicture()
-              .then((pictureFile) {
+              .then((pictureFile) async {
             // currentRep.picturePath = pictureFile.path;
             // final directory = await getApplicationDocumentsDirectory();
             getApplicationDocumentsDirectory().then((directory) {
@@ -547,8 +547,11 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
           File file = File(pictureFile.path);
           file.copy(path).then((file) {});
 
-          if (!_canProcess) {
-            Provider.of<CameraProvider>(context, listen: false)
+          if (!_canProcess &&
+              mounted &&
+              !context.read<PoseProvider>().isCameraDisposed) {
+            context.read<PoseProvider>().setCameraDisposed(true);
+            await Provider.of<CameraProvider>(context, listen: false)
                 .cameraController!
                 .dispose();
           }
@@ -558,6 +561,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   }
 
   Future<void> _processImage(InputImage inputImage) async {
+    print("live kardam 3");
     if (!_canProcess) return;
     if (_isBusy) return;
     _isBusy = true;
@@ -566,7 +570,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
     List<Pose> poses = [];
 
     if (context.read<PoseProvider>().isReadytoDetect) {
-      // print("dar khedmatim");
+      print("dar khedmatim");
       poses = await _poseDetector.processImage(inputImage);
     }
 

@@ -1,11 +1,11 @@
 enum MessageSender { llm, user }
 
-class Message {
+class ChatMessage {
   MessageSender sender;
   String content;
   DateTime timestamp;
 
-  Message(
+  ChatMessage(
       {required this.sender, required this.content, required this.timestamp});
 
   Map<String, dynamic> toJson() => {
@@ -14,8 +14,8 @@ class Message {
         'timestamp': timestamp.toIso8601String(),
       };
 
-  static Message fromJson(Map<String, dynamic> json) {
-    return Message(
+  static ChatMessage fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
       sender: MessageSender.values
           .firstWhere((e) => e.toString().split('.').last == json['sender']),
       content: json['content'],

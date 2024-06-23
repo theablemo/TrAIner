@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:trainerproject/models/exercise.dart';
 import 'package:trainerproject/models/rep.dart';
 import 'package:trainerproject/view/pages/exercise_chat_page.dart';
+import 'package:trainerproject/view/pages/rep_chat_page.dart';
 
 class ExerciseOverviewPage extends StatefulWidget {
   // final int totalReps;
@@ -32,7 +33,9 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
   @override
   void initState() {
     exercise = widget.exercise;
-    wrongReps = exercise.reps.where((rep) => rep.isWrong).toList();
+    wrongReps = exercise.reps
+        .where((rep) => rep.isWrong && rep.picturePath.isNotEmpty)
+        .toList();
     wrongRepsImages = wrongReps.map((rep) => rep.picturePath).toList();
     super.initState();
   }
@@ -49,7 +52,7 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
   void _chatAboutExercise(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ChatPage(
+        builder: (context) => ExerciseChatPage(
             // userName: 'John', // replace with actual user name
             // wrongRepsDetails: [
             //   {
@@ -70,8 +73,15 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
     );
   }
 
-  void _aiRecommendation() {
-    // Handle AI recommendation
+  void _aiRecommendation(Rep wrongRep) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RepChatPage(
+          wrongRep: wrongRep,
+        ),
+      ),
+    );
   }
 
   @override
@@ -189,8 +199,14 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
               ElevatedButton.icon(
                 icon: Icon(Icons.auto_awesome),
                 label: Text('Chat about this exercise with LLM'),
-                // onPressed: () => _chatAboutExercise(context),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ExerciseChatPage(),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -238,15 +254,16 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
                         ),
                       ),
                       Positioned(
+                        bottom: 5,
                         child: ElevatedButton.icon(
                           icon: Icon(Icons.auto_awesome),
                           label: Text('AI recommendation on this'),
-                          onPressed: _aiRecommendation,
+                          onPressed: () =>
+                              _aiRecommendation(wrongReps[itemIndex]),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.all(12),
                           ),
                         ),
-                        bottom: 5,
                       )
                     ],
                   ),
