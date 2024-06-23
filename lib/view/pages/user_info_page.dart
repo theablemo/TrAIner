@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
+import 'package:trainerproject/controllers/providers/chat_provider.dart';
+import 'package:trainerproject/controllers/providers/exercise_provider.dart';
 import 'package:trainerproject/controllers/providers/user_info_provider.dart';
 import 'package:trainerproject/models/user_info.dart';
 import 'package:trainerproject/view/pages/home_page.dart';
@@ -23,6 +25,9 @@ class _UserInfoAppEntryState extends State<UserInfoAppEntry> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkUserInfo();
+      Provider.of<ExerciseProvider>(context, listen: false)
+          .loadExercisesFromStorage();
+      Provider.of<ChatProvider>(context, listen: false).loadApiKey();
     });
   }
 
@@ -50,6 +55,7 @@ class _UserInfoAppEntryState extends State<UserInfoAppEntry> {
                   TextFormField(
                     decoration: InputDecoration(labelText: 'First Name'),
                     onSaved: (value) => _firstName = value!,
+                    keyboardType: TextInputType.name,
                   ),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Age'),

@@ -7,7 +7,16 @@ enum RepError {
   feetOutwards,
   heelGrounded,
   torsoAngle,
-  kneeOverToe,
+  kneeOverToe;
+
+  static String get listofErrors {
+    String returnedValue = "";
+    for (var repError in RepError.values) {
+      returnedValue =
+          '$returnedValue- ${repError.customName}: ${repError.customDescription}\n';
+    }
+    return returnedValue;
+  }
 }
 
 extension RepErrorExtension on RepError {
@@ -27,6 +36,27 @@ extension RepErrorExtension on RepError {
         return "Torso Upright";
       case RepError.kneeOverToe:
         return "Knee Behind Toe";
+      default:
+        return "";
+    }
+  }
+
+  String get customDescription {
+    switch (this) {
+      case RepError.hipSymmetry:
+        return "The hips are not level with each other.";
+      case RepError.kneeOutwards:
+        return "The knees are pointing outwards.";
+      case RepError.feetWidth:
+        return "The feet are too wide apart.";
+      case RepError.feetOutwards:
+        return "The feet are pointing outwards.";
+      case RepError.heelGrounded:
+        return "The heels are not touching the ground.";
+      case RepError.torsoAngle:
+        return "The torso is not upright.";
+      case RepError.kneeOverToe:
+        return "The knees are in front of the toes.";
       default:
         return "";
     }

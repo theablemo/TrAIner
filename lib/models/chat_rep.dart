@@ -9,7 +9,7 @@ class ChatRep {
     List<ChatMessage>? messages,
     this.wrongRepImagePath = "",
     this.correctedImagePath = "",
-  }) : messages = messages ?? [];
+  }) : messages = messages ?? List.empty(growable: true);
 
   Map<String, dynamic> toJson() => {
         'messages': messages.map((m) => m.toJson()).toList(),

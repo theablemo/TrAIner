@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 import 'package:provider/provider.dart';
+import 'package:trainerproject/controllers/providers/chat_provider.dart';
+import 'package:trainerproject/controllers/providers/exercise_provider.dart';
 import 'package:trainerproject/controllers/providers/user_info_provider.dart';
 import 'package:trainerproject/models/user_info.dart';
 
@@ -16,17 +18,22 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController ageController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
+  final TextEditingController apiKeyController = TextEditingController();
 
   // Example data for the summary section
-  int totalSquats = 150;
-  int correctSquats = 120;
-  int wrongSquats = 30;
+  int totalSquats = 0;
+  int correctSquats = 0;
+  int wrongSquats = 0;
 
   @override
   void initState() {
     // Add user info to text fields
     UserInfoProvider userInfoProvider =
         Provider.of<UserInfoProvider>(context, listen: false);
+    ChatProvider chatProvider =
+        Provider.of<ChatProvider>(context, listen: false);
+    ExerciseProvider exerciseProvider =
+        Provider.of<ExerciseProvider>(context, listen: false);
     final userInfo = userInfoProvider.userInfo;
     if (userInfo == null) {
       return;
@@ -35,8 +42,16 @@ class _ProfilePageState extends State<ProfilePage> {
     ageController.text = userInfo.age.toString();
     weightController.text = userInfo.weight.toString();
     heightController.text = userInfo.height.toString();
+    apiKeyController.text = chatProvider.apiKey;
     _experienceLevel = userInfo.experienceLevel;
 
+    // initialize exercises overivew
+    final exercises = exerciseProvider.exercises;
+    for (var exercise in exercises) {
+      totalSquats += exercise.totalReps;
+      correctSquats += exercise.correctReps;
+      wrongSquats += exercise.wrongReps;
+    }
     super.initState();
   }
 
@@ -65,6 +80,8 @@ class _ProfilePageState extends State<ProfilePage> {
             );
             Provider.of<UserInfoProvider>(context, listen: false)
                 .saveUserInfo(userInfo);
+            Provider.of<ChatProvider>(context, listen: false)
+                .setApiKey(apiKeyController.text);
             Navigator.of(context).pop();
           },
         ),
@@ -101,6 +118,7 @@ class _ProfilePageState extends State<ProfilePage> {
             TextField(
               controller: firstNameController,
               decoration: InputDecoration(labelText: 'First Name'),
+              keyboardType: TextInputType.name,
               // onEditingComplete: (value) => print("submittet"),
             ),
             TextField(
@@ -134,6 +152,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   _experienceLevel = value!;
                 });
               },
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: apiKeyController,
+              decoration: InputDecoration(labelText: 'Gemini API Key'),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              // onSaved: (value) => _height = double.parse(value!),
             ),
             SizedBox(height: 20),
             Text(
@@ -177,7 +203,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       center: Text(
                         "${(correctPercentage * 100).toStringAsFixed(1)}% Correct",
                         style: TextStyle(
-                            fontSize: 20.0, fontWeight: FontWeight.bold),
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       circularStrokeCap: CircularStrokeCap.round,
                       progressColor: Colors.green,

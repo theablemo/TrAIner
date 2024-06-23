@@ -2,10 +2,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:trainerproject/controllers/providers/chat_provider.dart';
+import 'package:trainerproject/controllers/providers/exercise_provider.dart';
+import 'package:trainerproject/controllers/providers/user_info_provider.dart';
 import 'package:trainerproject/models/exercise.dart';
 import 'package:trainerproject/models/rep.dart';
+import 'package:google_generative_ai/google_generative_ai.dart' as GenAI;
+import 'package:trainerproject/models/user_info.dart';
 import 'package:trainerproject/view/pages/exercise_chat_page.dart';
-import 'package:trainerproject/view/pages/rep_chat_page.dart';
+import 'package:trainerproject/view/placeholders.dart';
 
 class ExerciseOverviewPage extends StatefulWidget {
   // final int totalReps;
@@ -13,6 +20,7 @@ class ExerciseOverviewPage extends StatefulWidget {
   // final int wrongReps;
   // final List<String> wrongRepsImages;
   final Exercise exercise;
+  final bool isOverViewing;
 
   ExerciseOverviewPage({
     // required this.totalReps,
@@ -20,6 +28,7 @@ class ExerciseOverviewPage extends StatefulWidget {
     // required this.wrongReps,
     // required this.wrongRepsImages,
     required this.exercise,
+    required this.isOverViewing,
   });
 
   @override
@@ -30,55 +39,108 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
   late final Exercise exercise;
   late final List<Rep> wrongReps;
   late final List<String> wrongRepsImages;
+  late String overviewText;
+  late bool isOverviewing;
+  bool isOverviewGenerating = true;
   @override
   void initState() {
+    isOverviewing = widget.isOverViewing;
     exercise = widget.exercise;
+
     wrongReps = exercise.reps
         .where((rep) => rep.isWrong && rep.picturePath.isNotEmpty)
         .toList();
     wrongRepsImages = wrongReps.map((rep) => rep.picturePath).toList();
+
+    overviewText = exercise.descriptiveText;
+    if (overviewText.isNotEmpty) {
+      isOverviewGenerating = false;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _generateOverview();
+      });
+    }
     super.initState();
   }
 
-  void _dismissExercise(BuildContext context) {
-    // Handle exercise dismissal
-    Navigator.of(context).pop();
+  void _generateOverview() async {
+    final apiKey = Provider.of<ChatProvider>(context, listen: false).apiKey;
+    UserInfo userInfo =
+        Provider.of<UserInfoProvider>(context, listen: false).userInfo!;
+    final model = GenAI.GenerativeModel(
+      model: 'gemini-1.5-flash-latest',
+      apiKey: apiKey,
+      systemInstruction: GenAI.Content.text(
+        Exercise.contextSettingPrompt(),
+      ),
+    );
+    try {
+      final response = await model.generateContent([
+        GenAI.Content.text(
+          Exercise.generateDescriptiveTextPrompt(
+            userInfo.firstName,
+            exercise.totalReps,
+            exercise.wrongReps,
+          ),
+        ),
+      ]);
+      final text = response.text;
+      if (text == null || text.isEmpty) {
+        setState(() {
+          overviewText =
+              'Great job, ${userInfo.firstName}! You completed a total of ${widget.exercise.totalReps} reps. Out of these, '
+              '${widget.exercise.correctReps} were performed correctly and ${widget.exercise.wrongReps} were incorrect. '
+              'Keep practicing to improve your form.';
+          isOverviewGenerating = false;
+        });
+      } else {
+        setState(() {
+          overviewText = text;
+          isOverviewGenerating = false;
+        });
+      }
+    } catch (e) {
+      // print(e);
+    } finally {
+      exercise.descriptiveText = overviewText;
+    }
   }
+
+  // void _dismissExercise(BuildContext context) {
+  //   // Handle exercise dismissal
+  //   Navigator.of(context).pop();
+  // }
 
   void _saveExercise() {
     // Handle exercise saving
-  }
-
-  void _chatAboutExercise(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ExerciseChatPage(
-            // userName: 'John', // replace with actual user name
-            // wrongRepsDetails: [
-            //   {
-            //     'repNumber': 1,
-            //     'error': 'Knee Position',
-            //     'originalImage': 'assets/test/original1.jpg',
-            //     'correctedImage': 'assets/test/corrected1.jpg'
-            //   },
-            //   {
-            //     'repNumber': 2,
-            //     'error': 'Back Position',
-            //     'originalImage': 'assets/test/original2.jpg',
-            //     'correctedImage': 'assets/test/corrected2.jpg'
-            //   },
-            // ],
-            ),
-      ),
-    );
+    isOverviewing
+        ? context.read<ExerciseProvider>().saveModifiedExercise(exercise)
+        : context.read<ExerciseProvider>().addExercise(exercise);
+    Navigator.of(context).pop();
   }
 
   void _aiRecommendation(Rep wrongRep) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RepChatPage(
-          wrongRep: wrongRep,
+          // builder: (context) => RepChatPage(
+          //   wrongRep: wrongRep,
+          // ),
+          builder: (context) => ExerciseChatPage(
+                exercise: exercise,
+                isGeneralChat: false,
+                rep: wrongRep,
+              )),
+    );
+  }
+
+  void _chatAboutExercise(Exercise exercise) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExerciseChatPage(
+          exercise: exercise,
+          isGeneralChat: true,
         ),
       ),
     );
@@ -187,25 +249,27 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 20),
-              Text(
-                'Great job! You completed a total of ${widget.exercise.totalReps} reps. Out of these, '
-                '${widget.exercise.correctReps} were performed correctly and ${widget.exercise.wrongReps} were incorrect. '
-                'Keep practicing to improve your form.',
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 20),
+              Shimmer.fromColors(
+                enabled: isOverviewGenerating,
+                baseColor: isOverviewGenerating ? Colors.grey : Colors.black,
+                highlightColor: Colors.white,
+                child: isOverviewGenerating
+                    ? TitlePlaceholder(
+                        width: MediaQuery.of(context).size.width * 0.8,
+                      )
+                    : Text(
+                        overviewText,
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
               ),
               SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: Icon(Icons.auto_awesome),
                 label: Text('Chat about this exercise with LLM'),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ExerciseChatPage(),
-                    ),
-                  );
+                  _chatAboutExercise(exercise);
                 },
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 12),
@@ -236,10 +300,13 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
                       Stack(
                     alignment: Alignment.topCenter,
                     children: [
-                      Image.file(
-                        File(wrongRepsImages[itemIndex]),
-                        fit: BoxFit.cover,
-                        width: MediaQuery.of(context).size.width,
+                      Hero(
+                        tag: 'image-rep',
+                        child: Image.file(
+                          File(wrongRepsImages[itemIndex]),
+                          fit: BoxFit.cover,
+                          width: MediaQuery.of(context).size.width,
+                        ),
                       ),
                       Positioned(
                         top: 10,

@@ -3,29 +3,51 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:trainerproject/controllers/providers/chat_provider.dart';
+import 'package:google_generative_ai/google_generative_ai.dart' as GenAI;
 
 import 'package:trainerproject/models/rep.dart';
 
 class RepChatPage extends StatefulWidget {
   final Rep wrongRep;
   const RepChatPage({
-    Key? key,
+    super.key,
     required this.wrongRep,
-  }) : super(key: key);
+  });
   @override
-  State<RepChatPage> createState() => _RepChatPageState();
+  // ignore: no_logic_in_create_state
+  State<RepChatPage> createState() => _RepChatPageState(rep: wrongRep);
 }
 
 class _RepChatPageState extends State<RepChatPage> {
   static const platform = MethodChannel('com.example.native_interaction/image');
   bool isImageReady = false;
   String generatedImage = '';
+  final Rep rep;
+  late final GenAI.GenerativeModel model;
+  late final GenAI.ChatSession chat;
+  final FocusNode _textFieldFocus = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  _RepChatPageState({required this.rep});
 
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _getImage();
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _getImage();
+    // });
+
+    final apiKey = Provider.of<ChatProvider>(context, listen: false).apiKey;
+
+    model = GenAI.GenerativeModel(
+      model: 'gemini-1.5-flash-latest',
+      apiKey: apiKey,
+      systemInstruction: GenAI.Content.text(
+        Rep.contextSettingPrompt(),
+      ),
+    );
+
     super.initState();
   }
 

@@ -46,6 +46,9 @@ dependencies:
   path_provider: ^2.1.3
   flutter_gemini: ^2.0.4
   google_generative_ai: ^0.4.3
+  flutter_markdown: ^0.7.2+1
+  shimmer: ^3.0.0
+
   # flutter_gemma: ^0.2.1
   # mediapipe_genai: ^0.0.1
   # mediapipe_core: ^0.0.1

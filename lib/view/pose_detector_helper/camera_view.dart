@@ -127,8 +127,8 @@ class _CameraViewState extends State<CameraView> {
                 child: Transform.flip(
                   flipY: true,
                   child: RotatedBox(
-                    child: widget.customPaint,
                     quarterTurns: 1,
+                    child: widget.customPaint,
                   ),
                 ),
               ),

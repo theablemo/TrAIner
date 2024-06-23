@@ -5,10 +5,16 @@ import 'package:provider/provider.dart';
 import 'package:trainerproject/constants.dart';
 import 'package:trainerproject/controllers/providers/exercise_provider.dart';
 import 'package:trainerproject/models/exercise.dart';
+import 'package:trainerproject/view/pages/exercise_overview_page.dart';
 import 'package:trainerproject/view/pages/exercise_selection_page.dart';
 import 'package:trainerproject/view/pages/profile_page.dart';
 
 class HomePage extends StatelessWidget {
+  void _deleteExercise(BuildContext context, Exercise exercise) {
+    context.read<ExerciseProvider>().removeExercise(exercise);
+    Navigator.of(context).pop(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,8 +42,7 @@ class HomePage extends StatelessWidget {
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: const Text('About This App'),
-                    content: const Text(
-                        'This app helps athletes to track and analyze their squats. Created by Your Name.'),
+                    content: const Text(''),
                     actions: [
                       TextButton(
                         child: const Text('OK'),
@@ -101,9 +106,8 @@ class HomePage extends StatelessWidget {
                                 ),
                                 TextButton(
                                   child: const Text('Delete'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop(true);
-                                  },
+                                  onPressed: () => _deleteExercise(
+                                      context, exercises[index]),
                                 ),
                               ],
                             );
@@ -113,15 +117,18 @@ class HomePage extends StatelessWidget {
                       background: Container(
                         color: errorColor,
                         alignment: Alignment.centerRight,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Icon(Icons.delete, color: Colors.white),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Icon(Icons.delete, color: Colors.white),
                       ),
                       child: GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ExerciseDetailPage(),
+                              builder: (context) => ExerciseOverviewPage(
+                                exercise: exercises[index],
+                                isOverViewing: true,
+                              ),
                             ),
                           );
                         },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 import 'package:provider/provider.dart';
+import 'package:trainerproject/controllers/providers/camera_provider.dart';
 import 'package:trainerproject/controllers/providers/user_info_provider.dart';
 import 'package:trainerproject/models/exercise.dart';
 import 'package:trainerproject/view/pages/exercise_overview_page.dart';
@@ -36,6 +37,7 @@ class _ExerciseCompletionPageState extends State<ExerciseCompletionPage>
           MaterialPageRoute(
             builder: (context) => ExerciseOverviewPage(
               exercise: widget.exercise,
+              isOverViewing: false,
             ),
             // builder: (context) => /ExerciseOverviewPage(),
           ),
@@ -47,6 +49,9 @@ class _ExerciseCompletionPageState extends State<ExerciseCompletionPage>
   @override
   void dispose() {
     _controller.dispose();
+    Provider.of<CameraProvider>(context, listen: false)
+        .cameraController!
+        .dispose();
     super.dispose();
   }
 

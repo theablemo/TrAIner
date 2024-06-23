@@ -42,7 +42,7 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
     //           wrongReps: 11,
     //           wrongRepsImages: [])),
     // );
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => ExercisePage(

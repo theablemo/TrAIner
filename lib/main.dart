@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:trainerproject/constants.dart';
 import 'package:trainerproject/controllers/providers/camera_provider.dart';
+import 'package:trainerproject/controllers/providers/chat_provider.dart';
 import 'package:trainerproject/controllers/providers/exercise_provider.dart';
 import 'package:trainerproject/controllers/providers/pose_provider.dart';
 import 'package:trainerproject/controllers/providers/user_info_provider.dart';
@@ -46,6 +47,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (_) => PoseProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(),
         ),
         // ChangeNotifierProvider(
         //   create: (_) => PoseCheck(),
