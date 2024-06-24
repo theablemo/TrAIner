@@ -61,10 +61,17 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   final List<bool> isFootOutwardsMajorityVote = List.empty(growable: true);
   static const int FRAMESTODECIDE = 5;
 
+  late final String modelPath;
+
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // initializeCamera();
+      if (context.read<PoseProvider>().exercise!.viewType == ViewType.front) {
+        modelPath = "assets/models/squat/front";
+      } else {
+        modelPath = "assets/models/squat/side";
+      }
       initializeInterpreter();
       loadMeans();
       loadStds();
@@ -148,8 +155,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   }
 
   void initializeInterpreter() async {
-    interpreter =
-        await Interpreter.fromAsset('assets/models/squat/side/model.tflite');
+    interpreter = await Interpreter.fromAsset('$modelPath/model.tflite');
   }
 
   // Future<List<double>> loadMeans() async {
@@ -158,8 +164,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   // }
 
   Future<void> loadMeans() async {
-    final data =
-        await rootBundle.loadString('assets/models/squat/side/means.json');
+    final data = await rootBundle.loadString('$modelPath/means.json');
     means = List<double>.from(json.decode(data));
   }
 
@@ -169,8 +174,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   // }
 
   Future<void> loadStds() async {
-    final data =
-        await rootBundle.loadString('assets/models/squat/side/stds.json');
+    final data = await rootBundle.loadString('$modelPath/stds.json');
     stds = List<double>.from(json.decode(data));
   }
 

@@ -48,7 +48,7 @@ dependencies:
   google_generative_ai: ^0.4.3
   flutter_markdown: ^0.7.2+1
   shimmer: ^3.0.0
-
+  flutter_launcher_icons: ^0.13.1
   # flutter_gemma: ^0.2.1
   # mediapipe_genai: ^0.0.1
   # mediapipe_core: ^0.0.1

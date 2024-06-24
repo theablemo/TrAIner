@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 // import 'package:flutter_gemma/flutter_gemma_interface.dart';
 
 import 'package:provider/provider.dart';
@@ -35,14 +36,52 @@ class HomePage extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.info),
+            icon: const Icon(Icons.info),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: const Text('About This App'),
-                    content: const Text(''),
+                    content: const SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MarkdownBody(
+                            // shrinkWrap: true,
+                            data:
+                                'Welcome to the Squat Analyzer, a cutting-edge application developed as part of **Mohammad Abolnejadian**\'s Bachelor\'s project in Computer Science, under the guidance of **Dr. Bardia Safaei** during the Winter and Spring terms of 2024.',
+                          ),
+                          MarkdownBody(
+                            data:
+                                'The Squat Analyzer leverages advanced machine learning classifiers to track and count your squat repetitions accurately. By analyzing your body pose in real-time, the application provides personalized feedback and corrective suggestions to ensure you perform each squat correctly, minimizing the risk of injury and maximizing your workout efficiency.',
+                          ),
+                          MarkdownBody(
+                            data: 'Key features include:',
+                          ),
+                          MarkdownBody(
+                            data:
+                                '- **Real-time Rep Tracking:** Automatically count your squat reps using state-of-the-art ML classifiers.',
+                          ),
+                          MarkdownBody(
+                            data:
+                                '- **Pose Analysis and Correction:** Get instant feedback on your form and receive actionable suggestions to improve your squat technique.',
+                          ),
+                          MarkdownBody(
+                            data:
+                                '- **Session History:** Access a comprehensive list of your past squatting sessions to track your progress over time.',
+                          ),
+                          MarkdownBody(
+                            data:
+                                '- **AI Assistance:** Chat with a language model to receive exercise recommendations and summaries of your workout sessions.',
+                          ),
+                          MarkdownBody(
+                            data:
+                                'With the Squat Analyzer, enhance your squatting technique, track your progress, and achieve your fitness goals with intelligent, personalized guidance.',
+                          ),
+                        ],
+                      ),
+                    ),
                     actions: [
                       TextButton(
                         child: const Text('OK'),
@@ -157,7 +196,7 @@ class HomePage extends StatelessWidget {
               },
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
+        onPressed: () async {
           // final directory = Directory("");
           // final ex = await directory.list();
           // print("manam: ${}");
