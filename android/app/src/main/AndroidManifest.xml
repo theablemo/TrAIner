@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="trainerproject"
+        android:label="TrAIner"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <!-- Some devices, like the Pixel 6, may need to actively declare the use of native libs -->

@@ -11,8 +11,8 @@ class PoseCheckCard extends StatelessWidget {
     final mq = MediaQuery.of(context);
     return Card(
       color: currentSitutation
-          ? Colors.greenAccent.withOpacity(0.7)
-          : Colors.red.withOpacity(0.7),
+          ? Colors.greenAccent.withOpacity(0.9)
+          : Colors.red.withOpacity(0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),

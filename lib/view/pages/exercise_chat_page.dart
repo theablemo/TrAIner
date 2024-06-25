@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart' as GenAI;
 import 'package:provider/provider.dart';
+import 'package:trainerproject/constants.dart';
 import 'package:trainerproject/controllers/providers/chat_provider.dart';
 import 'package:trainerproject/controllers/providers/user_info_provider.dart';
 import 'package:trainerproject/models/chat_exercise.dart';
@@ -18,18 +19,21 @@ class ExerciseChatPage extends StatefulWidget {
   final Exercise exercise;
   final bool isGeneralChat;
   final Rep? rep;
+  final int? repIndex;
 
   const ExerciseChatPage({
     super.key,
     required this.exercise,
     required this.isGeneralChat,
     this.rep,
+    this.repIndex,
   });
   @override
   _ExerciseChatPageState createState() => _ExerciseChatPageState(
         exercise: exercise,
         isGeneralChat: isGeneralChat,
         rep: rep,
+        repIndex: repIndex,
       );
 }
 
@@ -37,6 +41,7 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
   final Exercise exercise;
   final bool isGeneralChat;
   final Rep? rep;
+  final int? repIndex;
 
   late final ChatExercise? chatExercise;
   late final ChatRep? chatRep;
@@ -54,6 +59,7 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
     required this.exercise,
     required this.isGeneralChat,
     this.rep,
+    this.repIndex,
   });
 
   @override
@@ -70,16 +76,24 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
     chatRep = !isGeneralChat ? rep!.chat : null;
     messages = isGeneralChat ? chatExercise!.messages : chatRep!.messages;
 
-    final List<GenAI.Content> messageHistory = messages
-        .map((m) => GenAI.Content.text(m.content))
-        .toList(growable: true);
     final apiKey = Provider.of<ChatProvider>(context, listen: false).apiKey;
+
+    final List<GenAI.Content> messageHistory = messages
+        .map(
+          (m) => GenAI.Content(
+            m.sender.name,
+            [GenAI.TextPart(m.content)],
+          ),
+        )
+        .toList(growable: true);
 
     model = GenAI.GenerativeModel(
       model: 'gemini-1.5-flash-latest',
       apiKey: apiKey,
       systemInstruction: GenAI.Content.text(
-        Exercise.contextSettingPrompt(),
+        isGeneralChat
+            ? Exercise.contextSettingPrompt()
+            : Rep.contextSettingPrompt(),
       ),
     );
     chat = model.startChat(history: messageHistory);
@@ -88,18 +102,33 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
         Provider.of<UserInfoProvider>(context, listen: false).userInfo!;
 
     if (messages.isEmpty) {
-      _sendChatMessage(
-          Exercise.generateWelcomeChatPrompt(
-            userInfo.firstName,
-            userInfo.age,
-            userInfo.weight,
-            userInfo.height,
-            userInfo.experienceLevel.name,
-            exercise.totalReps,
-            exercise.wrongReps,
-            exercise.generateErrorsSummary(),
-          ),
-          true);
+      if (!isGeneralChat) {
+        chatRep!.wrongRepImagePath = rep!.picturePath;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        !isGeneralChat
+            ? _sendChatMessage(
+                Rep.generateWelcomeChatPrompt(
+                    rep!.errors.map((e) => e.customName).join(', ')),
+                true,
+                true,
+                chatRep!.wrongRepImagePath,
+              )
+            : _sendChatMessage(
+                Exercise.generateWelcomeChatPrompt(
+                  userInfo.firstName,
+                  userInfo.age,
+                  userInfo.weight,
+                  userInfo.height,
+                  userInfo.experienceLevel.name,
+                  exercise.totalReps,
+                  exercise.wrongReps,
+                  exercise.generateErrorsSummary(),
+                ),
+                true,
+                false,
+                "");
+      });
     }
 
     super.initState();
@@ -117,7 +146,8 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
     );
   }
 
-  Future<void> _sendChatMessage(String message, bool isInitializing) async {
+  Future<void> _sendChatMessage(String message, bool isInitializing,
+      bool isImageMessage, String imagePath) async {
     FocusManager.instance.primaryFocus?.unfocus();
     _scrollDown();
     setState(() {
@@ -144,9 +174,19 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
     });
 
     try {
-      final response = await chat.sendMessage(
-        GenAI.Content.text(message),
-      );
+      final response = isImageMessage
+          ? await chat.sendMessage(
+              GenAI.Content.multi(
+                [
+                  GenAI.TextPart(message),
+                  GenAI.DataPart(
+                      'image/jpeg', await File(imagePath).readAsBytes()),
+                ],
+              ),
+            )
+          : await chat.sendMessage(
+              GenAI.Content.text(message),
+            );
 
       final text = response.text;
 
@@ -230,25 +270,39 @@ class _ExerciseChatPageState extends State<ExerciseChatPage> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       if (index == 0 && !isGeneralChat) {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Hero(
-                              tag: 'image-rep',
-                              child: Image.file(
-                                File(rep!.picturePath),
-                                fit: BoxFit.cover,
-                                width: MediaQuery.of(context).size.width,
-                              ),
-                            ),
-                            Column(
-                              children: [
-                                Chip(
-                                  label: Text("ridi"),
+                        return Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Hero(
+                                tag: 'rep$repIndex',
+                                child: Image.file(
+                                  File(rep!.picturePath),
+                                  fit: BoxFit.cover,
+                                  width: MediaQuery.of(context).size.width / 3,
                                 ),
-                              ],
-                            ),
-                          ],
+                              ),
+                              Column(
+                                // crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  // const Text("Rep Errors"),
+                                  ...rep!.errors.map(
+                                    (e) {
+                                      return Chip(
+                                        label: Text(e.customName),
+                                        backgroundColor: errorColor,
+                                        side: BorderSide.none,
+                                      );
+                                    },
+                                  )
+                                ],
+                              ),
+                            ],
+                          ),
                         );
                       }
                       var message = !isGeneralChat
@@ -368,7 +422,7 @@ class ChatMessageBubble extends StatelessWidget {
 
 class ChatInputField extends StatelessWidget {
   final TextEditingController controller;
-  final Function(String, bool) onSend;
+  final Function(String, bool, bool, String) onSend;
   final FocusNode focusNode;
   final bool isGeneratingReponse;
 
@@ -395,7 +449,7 @@ class ChatInputField extends StatelessWidget {
                   const InputDecoration(hintText: 'Type your message...'),
               onSubmitted: (text) {
                 if (text.isNotEmpty) {
-                  onSend(text, false);
+                  onSend(text, false, false, "");
                 }
               },
             ),
@@ -406,7 +460,7 @@ class ChatInputField extends StatelessWidget {
             onPressed: !isGeneratingReponse
                 ? () {
                     if (controller.text.isNotEmpty) {
-                      onSend(controller.text, false);
+                      onSend(controller.text, false, false, "");
                     }
                   }
                 : null,

@@ -13,7 +13,7 @@ class ChatProvider with ChangeNotifier {
     if (key != null && key.isNotEmpty) {
       _apiKey = key;
     } else {
-      _apiKey = "AIzaSyB94iyYtAxvk5580sv0cPJqsfz8mZnKtmk";
+      _apiKey = "AIzaSyC5RZa__UsJvGfv6tckyrEpnVdvRgccyTI";
     }
     notifyListeners();
   }

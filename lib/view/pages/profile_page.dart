@@ -61,44 +61,21 @@ class _ProfilePageState extends State<ProfilePage> {
         totalSquats > 0 ? correctSquats / totalSquats : 0.0;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            UserInfo userInfo = UserInfo(
-              firstName: firstNameController.text,
-              age: ageController.text.isNotEmpty
-                  ? int.parse(ageController.text)
-                  : 0,
-              weight: weightController.text.isNotEmpty
-                  ? double.parse(weightController.text)
-                  : 0.0,
-              height: heightController.text.isNotEmpty
-                  ? double.parse(heightController.text)
-                  : 0.0,
-              experienceLevel: _experienceLevel,
-            );
-            Provider.of<UserInfoProvider>(context, listen: false)
-                .saveUserInfo(userInfo);
-            Provider.of<ChatProvider>(context, listen: false)
-                .setApiKey(apiKeyController.text);
-            Navigator.of(context).pop();
-          },
-        ),
+        title: const Text('Profile'),
         actions: [
           IconButton(
-            icon: Icon(Icons.info),
+            icon: const Icon(Icons.info),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Text('Privacy Information'),
-                    content: Text(
+                    title: const Text('Privacy Information'),
+                    content: const Text(
                         'None of your personal information will be disclosed to anyone. This app does not require an internet connection to operate.'),
                     actions: [
                       TextButton(
-                        child: Text('OK'),
+                        child: const Text('OK'),
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
@@ -109,6 +86,29 @@ class _ProfilePageState extends State<ProfilePage> {
               );
             },
           ),
+          IconButton(
+            onPressed: () {
+              UserInfo userInfo = UserInfo(
+                firstName: firstNameController.text,
+                age: ageController.text.isNotEmpty
+                    ? int.parse(ageController.text)
+                    : 0,
+                weight: weightController.text.isNotEmpty
+                    ? double.parse(weightController.text)
+                    : 0.0,
+                height: heightController.text.isNotEmpty
+                    ? double.parse(heightController.text)
+                    : 0.0,
+                experienceLevel: _experienceLevel,
+              );
+              Provider.of<UserInfoProvider>(context, listen: false)
+                  .saveUserInfo(userInfo);
+              Provider.of<ChatProvider>(context, listen: false)
+                  .setApiKey(apiKeyController.text);
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.save),
+          )
         ],
       ),
       body: Padding(

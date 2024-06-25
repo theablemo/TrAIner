@@ -79,6 +79,28 @@ class HomePage extends StatelessWidget {
                             data:
                                 'With the Squat Analyzer, enhance your squatting technique, track your progress, and achieve your fitness goals with intelligent, personalized guidance.',
                           ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Version 1.0.0",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  "June 2024",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              ],
+                            ),
+                          )
                         ],
                       ),
                     ),
@@ -172,17 +194,28 @@ class HomePage extends StatelessWidget {
                           );
                         },
                         child: ListTile(
-                          leading: Icon(
-                            exercises[index].correctReps /
-                                        exercises[index].totalReps >
-                                    0.5
-                                ? Icons.check
-                                : Icons.warning,
-                            color: exercises[index].correctReps /
+                          // leading: Icon(
+                          //   exercises[index].correctReps /
+                          //               exercises[index].totalReps >
+                          //           0.5
+                          //       ? Icons.check
+                          //       : Icons.warning,
+                          //   color: exercises[index].correctReps /
+                          //               exercises[index].totalReps >
+                          //           0.5
+                          //       ? accentColor
+                          //       : warningColor,
+                          // ),
+                          leading: Chip(
+                            label: Text(
+                              exercises[index].viewType.name,
+                            ),
+                            backgroundColor: exercises[index].correctReps /
                                         exercises[index].totalReps >
                                     0.5
                                 ? accentColor
                                 : warningColor,
+                            // padding: EdgeInsets.all(value),
                           ),
                           title: Text(exercises[index].title),
                           subtitle: Text(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:trainerproject/constants.dart';
 import 'package:trainerproject/models/exercise.dart';
+import 'package:trainerproject/models/rep.dart';
 import 'package:trainerproject/view/pages/exercise_page.dart';
 
 class ExerciseSelectionPage extends StatefulWidget {
@@ -11,16 +13,161 @@ class ExerciseSelectionPage extends StatefulWidget {
 class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
   bool isSquatExpanded = false;
 
-  void _showInfoDialog(String view) {
+  Widget sideViewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+            """In this view, you should perform the squat with the phone on your right or left side.\n The application will realize which side of your body is closer to the phone."""),
+        const Text("In this view, the following errors will be detected:"),
+        const SizedBox(
+          height: 10,
+        ),
+        ExpansionTile(
+          leading: Chip(
+              // avatar: Icon(Icons.abc),
+              backgroundColor: errorColor,
+              side: BorderSide.none,
+              label: Text(
+                RepError.torsoAngle.customName,
+                // style: TextStyle(color: errorColor),
+              )),
+          title: Text(""),
+          children: [
+            Text(RepError.torsoAngle.customDescription),
+          ],
+        ),
+        ExpansionTile(
+          leading: Chip(
+              // avatar: Icon(Icons.abc),
+              backgroundColor: errorColor,
+              side: BorderSide.none,
+              label: Text(
+                RepError.heelGrounded.customName,
+                // style: TextStyle(color: errorColor),
+              )),
+          title: Text(""),
+          children: [
+            Text(RepError.heelGrounded.customDescription),
+          ],
+        ),
+        ExpansionTile(
+          leading: Chip(
+              // avatar: Icon(Icons.abc),
+              backgroundColor: errorColor,
+              side: BorderSide.none,
+              label: Text(
+                RepError.kneeOverToe.customName,
+                // style: TextStyle(color: errorColor),
+              )),
+          title: Text(""),
+          children: [
+            Text(RepError.kneeOverToe.customDescription),
+          ],
+        ),
+        // Row(
+        //   children: [
+        //     Chip(
+        //         // avatar: Icon(Icons.abc),
+        //         backgroundColor: errorColor,
+        //         side: BorderSide.none,
+        //         label: Text(
+        //           RepError.heelGrounded.customName,
+        //           // style: TextStyle(color: errorColor),
+        //         ))
+        //   ],
+        // )
+      ],
+    );
+  }
+
+  Widget frontViewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+            "In this view, you place the phone in front of you. This view is preferred as you can see the rep count and have a better understanding of what problems you are having as you perform the squat."),
+        const Text("In this view, the following errors will be detected:"),
+        const SizedBox(
+          height: 10,
+        ),
+        ExpansionTile(
+          leading: Chip(
+            // avatar: Icon(Icons.abc),
+            backgroundColor: errorColor,
+            side: BorderSide.none,
+            label: Text(
+              RepError.feetOutwards.customName,
+              // style: TextStyle(color: errorColor),
+            ),
+          ),
+          title: const Text(""),
+          children: [
+            Text(RepError.feetOutwards.customDescription),
+          ],
+        ),
+        ExpansionTile(
+          leading: Chip(
+            // avatar: Icon(Icons.abc),
+            backgroundColor: errorColor,
+            side: BorderSide.none,
+            label: Text(
+              RepError.feetWidth.customName,
+              // style: TextStyle(color: errorColor),
+            ),
+          ),
+          title: const Text(""),
+          children: [
+            Text(RepError.feetWidth.customDescription),
+          ],
+        ),
+        ExpansionTile(
+          leading: Chip(
+            // avatar: Icon(Icons.abc),
+            backgroundColor: errorColor,
+            side: BorderSide.none,
+            label: Text(
+              RepError.hipSymmetry.customName,
+              // style: TextStyle(color: errorColor),
+            ),
+          ),
+          title: const Text(""),
+          children: [
+            Text(RepError.hipSymmetry.customDescription),
+          ],
+        ),
+        ExpansionTile(
+          leading: Chip(
+            // avatar: Icon(Icons.abc),
+            backgroundColor: errorColor,
+            side: BorderSide.none,
+            label: Text(
+              RepError.kneeOutwards.customName,
+              // style: TextStyle(color: errorColor),
+            ),
+          ),
+          title: const Text(""),
+          children: [
+            Text(RepError.kneeOutwards.customDescription),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showInfoDialog(ViewType view) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('$view Information'),
-          content: Text('This is the $view of the squat exercise.'),
+          title: Text('${view.customName} Information'),
+          content: SingleChildScrollView(
+            child:
+                view == ViewType.side ? sideViewContent() : frontViewContent(),
+          ),
           actions: [
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -123,8 +270,7 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
                             title: Text(ViewType.side.customName),
                             trailing: IconButton(
                               icon: Icon(Icons.info),
-                              onPressed: () =>
-                                  _showInfoDialog(ViewType.side.customName),
+                              onPressed: () => _showInfoDialog(ViewType.side),
                             ),
                             onTap: () => _navigateToNextPage(ViewType.side),
                           ),
@@ -132,8 +278,7 @@ class _ExerciseSelectionPageState extends State<ExerciseSelectionPage> {
                             title: Text(ViewType.front.customName),
                             trailing: IconButton(
                               icon: Icon(Icons.info),
-                              onPressed: () =>
-                                  _showInfoDialog(ViewType.front.customName),
+                              onPressed: () => _showInfoDialog(ViewType.front),
                             ),
                             onTap: () => _navigateToNextPage(ViewType.front),
                           ),

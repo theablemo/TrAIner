@@ -37,8 +37,8 @@ class ExerciseOverviewPage extends StatefulWidget {
 
 class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
   late final Exercise exercise;
-  late final List<Rep> wrongReps;
-  late final List<String> wrongRepsImages;
+  Map<int, Rep> wrongReps = {};
+  Map<int, String> wrongRepsImages = {};
   late String overviewText;
   late bool isOverviewing;
   bool isOverviewGenerating = true;
@@ -46,11 +46,21 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
   void initState() {
     isOverviewing = widget.isOverViewing;
     exercise = widget.exercise;
+    final reps = exercise.reps;
 
-    wrongReps = exercise.reps
-        .where((rep) => rep.isWrong && rep.picturePath.isNotEmpty)
-        .toList();
-    wrongRepsImages = wrongReps.map((rep) => rep.picturePath).toList();
+    // get wrong reps
+    for (int i = 0; i < reps.length; i++) {
+      if (reps[i].isWrong) {
+        if (File(reps[i].picturePath).existsSync()) {
+          wrongReps[i + 1] = reps[i];
+        }
+      }
+    }
+
+    wrongRepsImages =
+        wrongReps.map((index, rep) => MapEntry(index, rep.picturePath));
+
+    // wrongRepsImages = wrongReps.map((rep) => rep.picturePath).toList();
 
     overviewText = exercise.descriptiveText;
     if (overviewText.isNotEmpty) {
@@ -84,6 +94,7 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
           ),
         ),
       ]);
+
       final text = response.text;
       if (text == null || text.isEmpty) {
         setState(() {
@@ -95,7 +106,7 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
         });
       } else {
         setState(() {
-          overviewText = text;
+          overviewText = text.trim();
           isOverviewGenerating = false;
         });
       }
@@ -119,18 +130,19 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
     Navigator.of(context).pop();
   }
 
-  void _aiRecommendation(Rep wrongRep) {
+  void _aiRecommendation(Rep wrongRep, int repIndex) {
     Navigator.push(
       context,
       MaterialPageRoute(
-          // builder: (context) => RepChatPage(
-          //   wrongRep: wrongRep,
-          // ),
-          builder: (context) => ExerciseChatPage(
-                exercise: exercise,
-                isGeneralChat: false,
-                rep: wrongRep,
-              )),
+        // builder: (context) => RepChatPage(
+        //   wrongRep: wrongRep,
+        // ),
+        builder: (context) => ExerciseChatPage(
+          exercise: exercise,
+          isGeneralChat: false,
+          rep: wrongRep,
+        ),
+      ),
     );
   }
 
@@ -250,20 +262,21 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
                 ],
               ),
               const SizedBox(height: 20),
-              Shimmer.fromColors(
-                enabled: isOverviewGenerating,
-                baseColor: isOverviewGenerating ? Colors.grey : Colors.black,
-                highlightColor: Colors.white,
-                child: isOverviewGenerating
-                    ? TitlePlaceholder(
+              isOverviewGenerating
+                  ? Shimmer.fromColors(
+                      enabled: isOverviewGenerating,
+                      baseColor:
+                          isOverviewGenerating ? Colors.grey : Colors.black,
+                      highlightColor: Colors.white,
+                      child: TitlePlaceholder(
                         width: MediaQuery.of(context).size.width * 0.8,
-                      )
-                    : Text(
-                        overviewText,
-                        style: const TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
                       ),
-              ),
+                    )
+                  : Text(
+                      overviewText,
+                      style: const TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
               SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: Icon(Icons.auto_awesome),
@@ -284,57 +297,59 @@ class _ExerciseOverviewPageState extends State<ExerciseOverviewPage> {
                 ),
                 SizedBox(height: 20),
                 CarouselSlider.builder(
-                  itemCount: wrongRepsImages.length,
-                  options: CarouselOptions(
-                    height: 300,
-                    enlargeCenterPage: true,
-                    autoPlay: true,
-                    aspectRatio: 2.0,
-                    autoPlayCurve: Curves.fastOutSlowIn,
-                    enableInfiniteScroll: true,
-                    autoPlayAnimationDuration: Duration(milliseconds: 800),
-                    viewportFraction: 0.8,
-                  ),
-                  itemBuilder: (BuildContext context, int itemIndex,
-                          int pageViewIndex) =>
-                      Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      Hero(
-                        tag: 'image-rep',
-                        child: Image.file(
-                          File(wrongRepsImages[itemIndex]),
-                          fit: BoxFit.cover,
-                          width: MediaQuery.of(context).size.width,
-                        ),
-                      ),
-                      Positioned(
-                        top: 10,
-                        child: Container(
-                          color: Colors.black54,
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          child: Text(
-                            'Rep ${itemIndex + 1}',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                    itemCount: wrongRepsImages.length,
+                    options: CarouselOptions(
+                      height: 300,
+                      enlargeCenterPage: true,
+                      autoPlay: true,
+                      aspectRatio: 2.0,
+                      autoPlayCurve: Curves.fastOutSlowIn,
+                      enableInfiniteScroll: true,
+                      autoPlayAnimationDuration: Duration(milliseconds: 2000),
+                      viewportFraction: 0.8,
+                    ),
+                    itemBuilder: (BuildContext context, int itemIndex,
+                        int pageViewIndex) {
+                      final repIndex = wrongRepsImages.keys.toList()[itemIndex];
+                      return Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          Hero(
+                            tag: 'rep$repIndex',
+                            child: Image.file(
+                              File(wrongRepsImages[repIndex]!),
+                              fit: BoxFit.cover,
+                              width: MediaQuery.of(context).size.width,
+                            ),
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 5,
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.auto_awesome),
-                          label: Text('AI recommendation on this'),
-                          onPressed: () =>
-                              _aiRecommendation(wrongReps[itemIndex]),
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.all(12),
+                          Positioned(
+                            top: 10,
+                            child: Container(
+                              color: Colors.black54,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              child: Text(
+                                'Rep ${repIndex}',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16),
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+                          Positioned(
+                            bottom: 5,
+                            child: ElevatedButton.icon(
+                              icon: Icon(Icons.auto_awesome),
+                              label: Text('AI recommendation on this'),
+                              onPressed: () => _aiRecommendation(
+                                  wrongReps[repIndex]!, repIndex),
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.all(12),
+                              ),
+                            ),
+                          )
+                        ],
+                      );
+                    }),
                 // SizedBox(height: 20),
                 // ElevatedButton.icon(
                 //   icon: Icon(Icons.auto_awesome),
